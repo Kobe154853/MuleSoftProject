@@ -1,13 +1,14 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<mule xmlns:email="http://www.mulesoft.org/schema/mule/email" xmlns:sockets="http://www.mulesoft.org/schema/mule/sockets"
-	xmlns:db="http://www.mulesoft.org/schema/mule/db"
-	xmlns:apikit="http://www.mulesoft.org/schema/mule/mule-apikit" xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+<mule xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xmlns:email="http://www.mulesoft.org/schema/mule/email"
+	xmlns:sockets="http://www.mulesoft.org/schema/mule/sockets"
+	xmlns:db="http://www.mulesoft.org/schema/mule/db" xmlns:apikit="http://www.mulesoft.org/schema/mule/mule-apikit" xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
 http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
 http://www.mulesoft.org/schema/mule/mule-apikit http://www.mulesoft.org/schema/mule/mule-apikit/current/mule-apikit.xsd
 http://www.mulesoft.org/schema/mule/db http://www.mulesoft.org/schema/mule/db/current/mule-db.xsd
 http://www.mulesoft.org/schema/mule/sockets http://www.mulesoft.org/schema/mule/sockets/current/mule-sockets.xsd
-http://www.mulesoft.org/schema/mule/email http://www.mulesoft.org/schema/mule/email/current/mule-email.xsd">
+http://www.mulesoft.org/schema/mule/email http://www.mulesoft.org/schema/mule/email/current/mule-email.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
 	<http:listener-config name="HTTP_Listener_config" doc:name="HTTP Listener config" doc:id="4aeb0ad3-5546-4d43-a492-1b8836ff2db9" >
 		<http:listener-connection host="0.0.0.0" port="8081" />
 	</http:listener-config>
@@ -52,7 +53,24 @@ http://www.mulesoft.org/schema/mule/email http://www.mulesoft.org/schema/mule/em
 				<choice doc:name="Choice" doc:id="9d2250ba-1e7c-4878-bef0-0895b6e28e54" >
 					<when expression="sizeOf(payload) &gt; 0">
 						<logger level="INFO" doc:name="Logger" doc:id="3127648a-1eab-44a9-9018-f360824e173f" message="payload"/>
-						<set-payload value='"register successfully"' doc:name="Set Payload" doc:id="b6e07260-cdef-45fe-a00f-86bdee815f06" />
+						<db:select doc:name="Select" doc:id="b6432b9b-8aaa-42e2-9b14-b8eff168ba70" config-ref="Database_Config">
+							<db:sql >select * from user</db:sql>
+						</db:select>
+						<ee:transform doc:name="Transform Message" doc:id="71084e49-1eed-4c25-83dd-e803405f882f">
+							<ee:message>
+								<ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+users:payload map(user,index)->{
+	id:payload[index].id,
+	name:payload[index].name,
+	age:payload[index].age,
+	address:payload[index].address,
+	password:payload[index].password,
+	email:payload[index].email
+}]]></ee:set-payload>
+							</ee:message>
+						</ee:transform>
 						<email:send doc:name="Send" doc:id="4d4bc0d3-1a49-4f2e-91ba-c5b30665514e" config-ref="Email_SMTP" fromAddress="15829775117@163.com" subject="register">
 							<email:to-addresses >
 								<email:to-address value="15829775117@163.com" />
