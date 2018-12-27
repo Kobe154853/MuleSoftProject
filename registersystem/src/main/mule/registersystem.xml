@@ -54,26 +54,13 @@ http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/
 					<when expression="sizeOf(payload) &gt; 0">
 						<logger level="INFO" doc:name="Logger" doc:id="3127648a-1eab-44a9-9018-f360824e173f" message="payload"/>
 						<db:select doc:name="Select" doc:id="b6432b9b-8aaa-42e2-9b14-b8eff168ba70" config-ref="Database_Config">
-							<db:sql >select * from user</db:sql>
+							<db:sql >select email from user where email = :a</db:sql>
+							<db:input-parameters ><![CDATA[#[{a:vars.email}]]]></db:input-parameters>
 						</db:select>
-						<ee:transform doc:name="Transform Message" doc:id="71084e49-1eed-4c25-83dd-e803405f882f">
-							<ee:message>
-								<ee:set-payload><![CDATA[%dw 2.0
-output application/json
----
-users:payload map(user,index)->{
-	id:payload[index].id,
-	name:payload[index].name,
-	age:payload[index].age,
-	address:payload[index].address,
-	password:payload[index].password,
-	email:payload[index].email
-}]]></ee:set-payload>
-							</ee:message>
-						</ee:transform>
+						<logger level="INFO" doc:name="Logger" doc:id="1202f3cb-2ff9-41e1-8194-fab0bcd7ee28" message="#[vars.email]"/>
 						<email:send doc:name="Send" doc:id="4d4bc0d3-1a49-4f2e-91ba-c5b30665514e" config-ref="Email_SMTP" fromAddress="15829775117@163.com" subject="register">
 							<email:to-addresses >
-								<email:to-address value="15829775117@163.com" />
+								<email:to-address value="#[vars.email]" />
 							</email:to-addresses>
 							<email:cc-addresses >
 								<email:cc-address value="15829775117@163.com" />
@@ -82,6 +69,7 @@ users:payload map(user,index)->{
 								<email:content ><![CDATA[#["you have registered successfully! "]]]></email:content>
 							</email:body>
 						</email:send>
+						<set-payload value='"register successfully!"' doc:name="Set Payload" doc:id="f5fddb8e-482e-41c3-9622-d08de427bb3c" />
 					</when>
 					<otherwise >
 						<logger level="INFO" doc:name="Logger" doc:id="d0605091-ece5-496f-b78e-e52e3ea70b95" message="payload"/>
